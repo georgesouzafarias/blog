@@ -1,0 +1,28 @@
+
+===== Kubernetes =====
+
+[[dump:k8scheatsheet| Kubectl Kubernetes Cheat Sheet]]
+
+[[dump:k8sdeploymentapp| Kubernetes Deploy]]
+
+[[dump:awseks| AWS EKS]]
+
+===== Linux =====
+
+[[dump:copysocat|Clonar Discos Através da Rede com Socat]]
+
+[[dump:dsh|Gerenciando Mutiplas Maquinas Linux com o DSH.]]
+
+[[dump:ibmudev|Fixando nomes de dispositivos para IBM Tape Library no Linux utilizando o Udev]]
+
+[[dump:makefile|Criando Makefile]]
+
+
+===== Devops =====
+
+[[dump:testinfra|Teste de Infraestrutura]]
+
+[[dump:puppet| Instalando e configurando Puppet]]
+
+[[dump:gitcheatsheet| Git Cheat Sheet]]
+
