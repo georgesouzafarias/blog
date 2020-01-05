@@ -12,6 +12,7 @@ dpkg -i puppet6-release-bionic.deb
 apt update
 
 apt-get install puppetserver
+
 </code>
 
 
@@ -88,6 +89,7 @@ Install the Puppet Dev Kit:
 Move to module folder into the production environment:
 
 <code>
+
 cd /etc/puppetlabs/code/environments/production/modules
 </code>
 

@@ -1,0 +1,87 @@
+====== Clonar Discos Através da Rede com Socat ======
+
+====== Problema ======
+
+As vezes precisamos enviar grandes volumes de dados através da rede, como por exemplo uma ISO, grandes arquivos de mídia ou até uma imagem inteira de um disco
+
+Opções Normalmente utilizada:
+
+Muitas vez quando nos deparamos com essa necessidade, utilitários como o scp vem em nossa mente. Claro que esse utilitários nos atenderíamos perfeitamente porém não com a mesma performance.
+
+O scp ou o rsync por exemplo, utilizam um tunelamento criptografado entre a origem e o destino a fim de aumentar a segurança da transferência, porém, muitas vezes não precisamos de tal segurança em nossa comunicação, segurança essa que comprometem a performance da transferência quando na verdade queremos penas que os dados do ponto A vá ao ponto B o mais rápido possível.
+
+======Solução======
+
+Na nossa solução iremos utilizar, utilizaremos o dd para efetuar a cópia bit-a-bit, o utilitário gzip para efetuar a compactação e descompactação das informações, e por último porém não menos importante, o socat para fazer o envio de uma estação para outra.
+
+Entendendo a Solução:
+
+<code>
+dd [OPERANDO]
+
+Descrição: Copia um arquivo, convertendo-o e formatando-o conforme os operandos.
+
+Opções:
+bs=BYTES        lê e escreve até BYTES bytes de uma vez
+count=N         copia somente N blocos de entrada
+if=ARQUIVO      lê do ARQUIVO em vez de usar a entrada padrão
+of=ARQUIVO      escreve em ARQUIVO em vez de usar a saída padrão
+</code>
+
+<code>
+gzip [OPTION]... [FILE]...
+
+Descrição: Compacta e Descompacta Arquivos
+Opções:
+-c, --compress   comprimir
+-d, --decompress  descomprimir
+-f, --force       Força sobrescrita do arquivo de saida
+-k, --keep        Mantém (Não apaga) os arquivos de saída
+-l, --list        Lista o conteúdo dos arquivos compactados
+</code>
+
+
+<code>
+socat [options]
+
+Descrição: Socat é um comando utilizado para estabilizar dois fluxos bidirecionais para transferência de informação.
+
+Opções:
+
+tcp4-connect::        groups=FD,SOCKET,CHILD,RETRY,IP4,TCP
+</code>
+
+
+Exemplo de uso:
+Na máquina que Receberá
+
+<code>
+
+socat - tcp4-listen:6666 - | gzip -d | dd of=/dev/sda
+
+</code>
+
+
+Onde:
+
+Iremos abrir um conexão na porta 6666 do tipo TCP utilizando o socat.
+Via pipeline as informações recebidas serão descompactadas com o gzip.
+E por último também via pipeline, o arquivo descompactado será recebido pelo dd utilizando o parâmetro of./li>
+
+
+Na máquina que Enviará
+
+<code>
+
+dd if=/dev/sda| gzip -c | socat - tcp4:192.168.0.1:6666
+
+</code>
+
+
+Onde:
+
+O dd com o parâmetro if irá enviar.
+Via pipeline as informações serão compactadas com o gzip.
+E por último também via pipeline, o arquivo compactado será enviado através da rede com o socat.
+
+
