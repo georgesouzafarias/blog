@@ -1,0 +1,174 @@
+====== Gerenciando Mutiplas Maquinas Linux com o DSH. ======
+
+===== Problema =====
+
+Quando administramos elevados números de servidores diariamente em ambientes de médio e grande porte, nos deparamos com a necessidade de executar diversos procedimentos em um número específico de hosts e muitas vezes esse procedimento é repetitivo e simples mas precisamos acessar diversos servidores e executar manualmente os procedimentos.
+
+Opções normalmente utilizada:
+
+Existem diversas soluções que podem auxiliar o administrador. Existem algumas mais caseiras como scripts em shell como aplicações mais robustas como Puppet, Chef, Ansibia dentre outras opções.
+
+===== Solução Proposta =====
+
+A solução que proponho é o uso do DSH, mas, WHF é DSH?
+
+DSH é a abreviação para "Distributed Shell" ou "Dancer’s Shell" que está disponível para a maioria das distribuições linux.
+
+Escavando mais fundo, o DSH é uma implementação do wrapper para executar múltiplos comandos shell remotos nos hosts remotos.
+
+==== Instalação ====
+
+A instação é muito simples, para distribuições Debian / Ubuntu a instalação é mais simples ainda, bastar instalar via repositório:
+
+<code>
+
+apt-get install dsh
+
+</code>
+
+Para as distribuições RHEL / CentOS / Fedora é necessário fazer a compilação.
+
+Primeiro de tudo, faça a instalação da lib "libdshconfig".
+
+<code>
+
+# wget http://www.netfort.gr.jp/~dancer/software/downloads/libdshconfig-0.20.10.cvs.1.tar.gz
+# tar -xvf libdshconfig-0.20.9.tar.gz
+# cd libdshconfig-0.20.9.tar.gz/
+
+# ./configure ; make
+# make install
+
+</code>
+
+Talvez seja necessário instalar outros pacotes para fazer compilação, se necessário, você pode utiliza:
+
+</code>
+
+# yum groupinstall "Ferramentas de Desenvolvimento"
+
+</code>
+
+Após a compilação e instalação da lib, faça a compilação e instalação do dsh.
+
+<code>
+
+# wget  http://www.netfort.gr.jp/~dancer/software/downloads/dsh-0.22.0.tar.gz
+# tar -xvf dsh-0.22.0.tar.gz
+# cd dsh-0.22.0/
+# ./configure ; make
+# make install
+
+</code>
+
+Configuração
+
+O arquivo principal de configuração fica em "/etc/dsh/dsh.conf" (Para o Debian like) e em "/usr/local/etc/dsh.conf" (Para Red Hat like) .
+
+<code>
+
+#default configuration file for dsh.
+
+# suppled as part of dancer's shell
+
+verbose = 0
+
+remoteshell =rsh
+
+showmachinenames = 0
+
+waitshell=1  # whether to wait for execution
+
+#remoteshellopt=...
+
+# default config file end.
+
+</code>
+
+Esse é o arquivo de configuração padrão do dsh, para melhor utilizarmos faremos duas alterações:
+
+A primeira dela é:
+
+<code>
+
+remoteshell =rsh
+
+</code>
+
+Para:
+
+<code>
+
+remoteshell =ssh
+
+</code>
+
+Essa opção vai alteração ira trocar o cliente de acesso remoto que o DSH vai utilizar. o RSH é um cliente que não fornece criptografia, então, alteraremos para SSH para aumentar a segurança.
+
+Lista de Hosts
+
+Para configurar a lista de hosts, vamos criar um arquivo chamado machines.list, "/etc/dsh/machines.list" (Para os sistemas Debian like) e em "/usr/local/etc/machines.list" (Para os sistemas Red Hat like) .
+
+A syntax é bem simples, para cadastrar os hosts basta colocar um por linha os dados(Hostname, IP ou FQND).
+
+P.S: Quando acessamos mais de um host simultaneamente, será necessário efetuar a troca de chaves para que não seja necessário digitá-la no prompt.
+
+Então, adicione nos arquivos:
+
+<code>
+
+Host1 10.20.30.10
+Host2 10.20.30.11
+
+</code>
+
+Once you have entered in the credentials of the machines you wish to access, let’s run a simple command like `uptime` to all of the machines.
+
+<code>
+$ dsh –aM –c uptime
+Sample Output
+
+172.16.25.125: 05:11:58 up 40 days, 51 min, 0 users, load average: 0.00, 0.01, 0.05
+172.16.25.126: 05:11:47 up 13 days, 38 min, 0 users, load average: 0.00, 0.01, 0.05
+So what did this command do?
+Pretty simple. First, we ran dsh and passed the “–a” option to it, which says to send the “uptime” command to “ALL” of the machines listed in “/etc/dsh/machines.list“.
+
+Next, we specified the “–M” option, which says to return the “machine name” (specified in “/etc/dsh/machines.list“) along with the output of the uptime command. (Very useful for sorting when running a command on a number of machines.)
+
+The “–c” option stands for “command to be executed” in this case, “uptime“.
+
+DSH can also be configured with groups of machines in the “/etc/dsh/groups/” file, where is a file with a list of machines in the same format as the “/etc/dsh/machines.list” file. When running dsh on a group, specify the groupname after the “-g” option.
+
+For Red Hat based systems you need to create a folder called “groups” in “/usr/local/etc/” directory. In that “groups” directory you create a file called “cluster“.
+
+For example, run the “w” command on all machines listed in the “cluster” group file “/etc/dsh/groups/cluster” or “/usr/local/etc/groups/cluster“.
+</code>
+
+<code>
+$ dsh –M –g cluster –c w
+DSH provides much more flexibility, and this tutorial only scratches the surface. Aside from executing commands, DSH can be used to transfer files, install software, add routes, and much more.
+
+To a Systems Administrator tasked with the responsibility of a large network, it is invaluable
+</code>
+
+=== Apêndice ===
+
+No meu caso, tive problemas com o correto apontamento da lib instalada, mas a solução é bem simples.
+
+Crie um arquivo /etc/ld.so.conf.d/libdshconfig.conf e adicione a seguinte linha.
+
+<code>
+
+/usr/local/lib/
+
+</code>
+
+Depois é só executar:
+
+<code>
+
+# ldconfig
+
+</code>
+
+
