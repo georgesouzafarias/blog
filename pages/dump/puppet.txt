@@ -1,0 +1,408 @@
+===== Introduction =====
+
+Starting with installing Puppet, we'll then install and configure Puppet Open Source. Next, we'll create an Apache module where we'll learn how to use resource types, add static files, create templates, use OS-specific parameters, and store data in Hiera.
+
+===== Installing Debian =====
+
+<code>
+wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
+
+dpkg -i puppet6-release-bionic.deb
+
+apt update
+
+apt-get install puppetserver
+</code>
+
+
+Configure Puppet Server to use puppet hostname in /etc/puppetlabs/puppet/puppet.conf. First, open the file:
+
+<code>
+vim /etc/puppetlabs/puppet/puppet.conf
+
+[main]
+certname = puppet
+
+[master]
+certname = puppet
+
+</code>
+
+Update /etc/default/puppetserver to use 512 MB of memory. First, open the file:
+
+<code>
+vim /etc/default/puppetserver
+
+JAVA_ARGS="-Xms512m -Xmx512m -Djruby.logger.class=com.puppetlabs.jruby_utils.jruby.Slf4jLogger"
+
+</code>
+
+Set up the certificate authority:
+
+<code>
+/opt/puppetlabs/bin/puppetserver ca setup
+</code>
+
+<code>
+systemctl start puppetserver
+
+
+systemctl enable puppetserver
+</code>
+
+===== Installing Pupept Agent On CentOS =====
+
+Add the Puppet repository:
+
+<code>
+rpm -Uvh https://yum.puppetlabs.com/puppet6/puppet6-release-el-7.noarch.rpm
+
+yum update
+
+yum install puppet-agent
+
+systemctl start puppet
+
+systemctl enable puppet
+
+</code>
+
+
+Accept the agent:
+
+<code>
+
+puppetserver ca sign --certname <hostname>
+
+
+</code>
+
+===== Installing Puppet Dev Kit =====
+
+Install the Puppet Dev Kit:
+
+<code> apt-get install pdk </code>
+
+===== Create the Apache Module =====
+
+Move to module folder into the production environment:
+
+<code>
+cd /etc/puppetlabs/code/environments/production/modules
+</code>
+
+
+Generate a new module:
+
+<code>
+pdk new module apache
+</code>
+
+Move to the new folder created:
+
+<code>
+cd apache
+</code>
+
+Now, create the install class for the new module:
+
+<code>
+pdk new class install
+</code>
+
+Write a class to install httpd on CentOS 7 using the package resource type:
+
+<code>
+vim manifests/install.pp
+
+class apache::install (
+  $install_package = $apache::params::install_package,
+) inherits apache::params {
+  package { 'install_apache':
+    name   => $install_package,
+    ensure => $apache::install_ensure,
+  }
+}
+</code>
+
+Create and update a params class for OS-specific data:
+
+<code>
+pdk new class params
+
+vim manifests/params.pp
+
+class apache::params {
+  case $::osfamily {
+    'RedHat': {
+      $install_package = 'httpd'
+    }
+  }
+}
+</code>
+
+
+In the module's data directory, open common.yaml and add the $apache::install_ensure Hiera data:
+
+<code>
+vim data/common.yaml
+
+---
+apache::install_ensure: 'present'
+</code>
+
+Run the Puppet parser against the install manifest:
+
+<code>
+puppet parser validate manifests/install.pp
+</code>
+
+Create a service class using the PDK:
+
+<code>
+pdk new class service
+</code>
+
+Create a service class that ensures the httpd service is started, enabled, and able to be restarted by other classes:
+
+<code>
+vim manifests/service.pp
+</code>
+<code>
+class apache::service (
+  $service_name = $apache::params::service_name
+  ) inherits apache::params {
+  service { 'apache_service':
+    name       => $service_name,
+    ensure     => $apache::service_ensure,
+    enable     => $apache::service_enable,
+    hasrestart => $apache::service_hasrestart,
+  }
+}
+
+</code>
+
+Update the params.pp file:
+
+<code>
+vim manifests/params.pp
+<code>
+<code>
+class apache::params {
+  case $::osfamily {
+    'RedHat': {
+      $install_package = 'httpd'
+      $service_name = 'httpd'
+    }
+  }
+}
+</code>
+
+Update the common.yaml file:
+
+<code>
+vim data/common.yaml
+
+---
+apache::install_ensure: 'present'
+apache::service_ensure: 'running'
+apache::service_enable: true
+apache::service_hasrestart: true
+
+</code>
+
+
+Validate the manifest:
+
+<code>
+puppet parser validate manifests/service.pp
+</code>
+
+Create a new class config:
+
+<code>
+pdk new class config
+</code>
+
+<code>
+class apache::config (
+  $config_path = $apache::params::config_path,
+  $config_source = $apache::params::config_source,
+) inherits apache::params {
+  file { 'apache_config':
+    path   => $config_path,
+    source => $config_source,
+    ensure => $apache::config_ensure,
+    notify => Service['apache_service'],
+  }
+}
+</code>
+
+Update the params class:
+
+<code>
+class apache::params {
+  case $::osfamily {
+    'RedHat': {
+      $install_package = 'httpd'
+      $service_name = 'httpd'
+      $config_path = '/etc/httpd/conf/httpd.conf'
+      $config_source = 'puppet:///modules/apache/httpd.conf'
+    }
+  }
+}
+</code>
+
+
+Update the common.yaml Hiera data:
+
+<code>
+
+---
+apache::install_ensure: 'present'
+apache::service_ensure: 'running'
+apache::service_enable: true
+apache::service_hasrestart: true
+apache::config_ensure: 'present'/
+
+</code>
+
+Validate the class:
+
+<code>
+puppet parser validate manifests/config.pp
+</code>
+
+
+Create the basic vhosts.conf.epp template in the templates directory:
+
+<code>
+vim templates/vhosts.conf.epp
+
+Listen <%= $apache::vhosts_port %>
+<VirtualHost *:<%= $apache::vhosts_port %>>
+    DocumentRoot "<%= $apache::vhosts_root %>"
+    ServerName www.<%= $nginx::apache_servername %>
+</VirtualHost>
+</code>
+
+This Hiera data will be node-specific, so create the nodes directory under the production environment Hiera data:
+
+<code>
+mkdir ../../data/nodes
+</code>
+
+Create the <Hostname>.yaml file in this new directory and add the Hiera data for the virtual hosts file:
+
+<code>
+apache::vhosts_port: '80'
+apache::vhosts_root: '/var/www'
+apache::vhosts_servername: 'the-puppet-project.com'
+Create a vhosts class to add this template to the agent:
+</code>
+
+<code>
+pdk new class vhosts
+</code>
+
+<code>
+class apache::vhosts (
+  $vhosts_dir = $apache::params::vhosts_dir
+  ) inherits apache::params {
+  file { "${vhosts_servername}.conf":
+    content => epp('apache/vhosts.conf.epp'),
+    ensure  => $apache::vhosts_ensure,
+    path    => "${vhosts_dir}/${apache::vhosts_servername}.conf",
+  }
+
+  file { "$apache::vhosts_root":
+    ensure => $apache::vhosts_root_ensure,
+  }
+}
+</code>
+
+
+Update the params file:
+
+<code>
+class apache::params {
+  case $::osfamily {
+    'RedHat': {
+      $install_package = 'httpd'
+      $service_name = 'httpd'
+      $config_path = '/etc/httpd/conf/httpd.conf'
+      $config_source = 'puppet:///modules/apache/httpd.conf'
+      $vhosts_dir = '/etc/httpd/conf.d/'
+    }
+  }
+}
+</code>
+
+Update the common.yaml Hiera data:
+
+<code>
+
+apache::install_ensure: 'present'
+apache::service_ensure: 'running'
+apache::service_enable: true
+apache::service_hasrestart: true
+apache::config_ensure: 'present'
+apache::vhosts_ensure: 'present'
+apache::vhosts_root_ensure: 'directory'
+
+</code>
+
+Run the Puppet parser:
+
+<code>
+puppet parser validate manifests/vhosts.pp
+</code>
+
+Create the main apache class and ensure all classes in the module are included:
+
+<code>
+pdk new class apache
+</code>
+
+<code>
+class apache (
+  $install_package = apache::params::install_package,
+  $service_name = $apache::params::service_name,
+  $config_path = $apache::params::config_path,
+  $config_source = $apache::params::config_source,
+  $vhosts_dir = $apache::params::vhosts_dir,
+  String $install_ensure,
+  String $service_ensure,
+  Boolean $service_enable,
+  Boolean $service_hasrestart,
+  String $config_ensure,
+  String $vhosts_port,
+  String $vhosts_root,
+  String $vhosts_servername,
+  String $vhosts_ensure,
+  String $vhosts_root_ensure,
+) inherits apache::params {
+  contain apache::install
+  contain apache::config
+  contain apache::service
+  contain apache::vhosts
+
+  Class['apache::install']
+  -> Class['apache::config']
+  ~> Class['apache::service']
+  -> Class['apache::vhosts']
+}
+
+</code>
+
+Add the apache class to our web1 server in the production environment's site.pp manifest:
+
+<code>
+vim ../../manifests/site.pp
+
+node <hostname> {
+  class { 'apache': }
+}
+
+
+</code>
