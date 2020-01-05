@@ -1,0 +1,77 @@
+======= Fixando nomes de dispositivos para IBM Tape Library no Linux utilizando o Udev ======
+
+===== Problema =====
+Após um reboot pode acontecer que alguns devices troque os SYMLINK no /dev e leve à problemas nas configurações de aplicativos dependentes desses apontamentos, como por exemplo, bibliotecas de Backup.
+
+===== Solução =====
+Umas das soluções, é a criação de uma regra para o udev criar um link de sistema o dispositivo independente de qual nome ou apontamento ele assuma após o boot.
+
+==== O que é o UDEV ====
+O Udev é um gerenciador dinâmico de dispositivos implementado incialmente no Kernel Linux 2.6. Seu principal objetivo é gerenciar o endereçamento dos devices no diretório /dev, criando ou removendo os dispositivo se necessário.
+
+Além disso, o udev permite que criemos regras específicas durante sua descoberta, dando mais flexibilidade na configuração de dispositivos.
+
+==== Consultando Dispositivos ====
+
+Antes de criar as regras no Udev, é necessário consultar as informações dos devices a fim de capturar os atributos que identificam o dispositivo que precisamos.
+
+Para isso, podemos usar o udevadm seguindo a seguinte sitaxe:
+
+<code>
+udevadm [--help] [--version] [--debug] COMANDO [OPÇÕES]
+
+Commands:
+  info          Consulta o sysfs ou a base de dados do udev
+  trigger       Request events from the kernel
+  settle        Espera por eventos pendente do udev
+  control       Controla o daemon do udev
+  monitor       Monitora os evetos do udev
+  test          Testa um evento do udev
+</code>
+
+Exemplo:
+
+<code>
+udevadm info --query all -a --name /dev/IBMchanger0
+</code>
+
+Saida:
+
+<code>
+looking at device '/devices/pci0000:00/0000:00:03.0/0000:03:00.0/host1/rport-1:0-4/target1:0:3/1:0:3:1/lin_tape/IBMchanger0':
+    KERNEL=="IBMchanger0"
+    SUBSYSTEM=="lin_tape"
+    DRIVER==""
+    ATTR{serial_num}=="000001321330_LLA"
+    ATTR{primary_path}=="NA"
+</code>
+
+==== Criar as regras de Udev ====
+
+Para criar as regras no udev, crie um arquivo dentro do /etc/udev/rules.d/
+
+<code>
+# vim /etc/udev/rules.d/99-robo-ibm.rules 
+</code>
+
+Dentro desse arquivo escreva as regras:
+
+<code>
+
+KERNEL=="IBMchanger*[!n]", SYSFS{serial_num}=="000001321330_LLA",SYMLINK="lin_tape/by-id/changer_000001321330_LLA"
+
+Onde:
+
+KERNEL --> Ponto de montagem;
+SYSFS ---> Sistema de arquivos virtual;
+serial_num --> Número de série encontrado na tape ou na query do udeadm mostrado acima.
+SYMLINK --> Link de sistema que será criado pelo udev.
+</code>
+
+==== Testar as novas regras ====
+
+<code>
+udevadm test $(udevadm info -q path -n /dev/IBMchanger0) 2>&1
+</code>
+
+Como resultado, será identificado a regra criado e automaticamente será criado o link do sistema.
