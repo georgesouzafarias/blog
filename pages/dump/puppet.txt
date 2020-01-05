@@ -404,5 +404,4 @@ node <hostname> {
   class { 'apache': }
 }
 
-
 </code>
