@@ -170,4 +170,3 @@ Depois é só executar:
 # ldconfig
 
 </code>
-
