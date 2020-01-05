@@ -1,0 +1,42 @@
+====== Aws EKS ======
+
+
+
+
+===== Introduction =====
+We will create our own Elastic Container Service for Kubernetes (EKS) cluster. We will use the eksctl command line utility to create the VPC infrastructure.
+
+===== Configure AWS CLI Credentials =====
+
+Run the aws configure command.
+
+<code>
+aws configure
+</code>
+
+
+  * Enter your access key at the prompt.
+  * Enter your secret access key at the prompt.
+  * Specify the default region name.
+
+To verify that the configuration was successful, run:
+
+<code>
+aws sts get-caller-identity
+</code>
+
+===== Creating an EKS Cluster in AWS =====
+
+
+==== Create a New EKS Cluster ====
+
+Run the command:
+
+<code> eksctl create cluster --region=us-east-1 --node-type=t2.small </code>
+
+//Wait for the command to finish running (it may take up to 15 minutes).//
+
+
+To verify that the cluster configuration works, run:
+
+<code> kubectl get nodes </code>
