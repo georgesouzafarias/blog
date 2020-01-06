@@ -23,7 +23,7 @@
 
 [[dump:puppetsyntax| Puppet Systax]]
 
-[[dump:puppetmoduloApache| Puppet Módulo Apache]]
+[[dump:puppetmoduloapache| Puppet Módulo Apache]]
 
 ===== Devops =====
 
