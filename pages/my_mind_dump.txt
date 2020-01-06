@@ -17,12 +17,14 @@
 
 [[dump:makefile|Criando Makefile]]
 
+===== Puppet =====
+
+[[dump:puppet| Puppet]]
 
 ===== Devops =====
 
 [[dump:testinfra|Teste de Infraestrutura]]
 
-[[dump:puppet| Instalando e configurando Puppet]]
 
 [[dump:gitcheatsheet| Git Cheat Sheet]]
 
