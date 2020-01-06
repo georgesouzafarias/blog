@@ -1,8 +1,6 @@
 ====== Aws EKS ======
 
 
-
-
 ===== Introduction =====
 We will create our own Elastic Container Service for Kubernetes (EKS) cluster. We will use the eksctl command line utility to create the VPC infrastructure.
 
@@ -13,7 +11,6 @@ Run the aws configure command.
 <code>
 aws configure
 </code>
-
 
   * Enter your access key at the prompt.
   * Enter your secret access key at the prompt.
@@ -36,6 +33,7 @@ Run the command:
 
 //Wait for the command to finish running (it may take up to 15 minutes).//
 
+=== Check the Configuration ===
 
 To verify that the cluster configuration works, run:
 
