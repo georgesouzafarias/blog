@@ -19,7 +19,11 @@
 
 ===== Puppet =====
 
-[[dump:puppet| Puppet]]
+[[dump:puppetinstall| Puppet Instação]]
+
+[[dump:puppetsyntax| Puppet Systax]]
+
+[[dump:puppetmoduloApache| Puppet Módulo Apache]]
 
 ===== Devops =====
 

@@ -1,0 +1,138 @@
+===== Introduction =====
+
+Starting with installing Puppet, we'll then install and configure Puppet Open Source.
+
+===== Installing Puppet Server on Debian =====
+
+<code>
+wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
+
+dpkg -i puppet6-release-bionic.deb
+
+apt update
+
+apt-get install puppetserver
+
+</code>
+
+
+Configure Puppet Server to use puppet hostname in /etc/puppetlabs/puppet/puppet.conf. First, open the file:
+
+<code>
+vim /etc/puppetlabs/puppet/puppet.conf
+
+[main]
+certname = puppet
+
+[master]
+certname = puppet
+
+</code>
+
+Update /etc/default/puppetserver to use 512 MB of memory. First, open the file:
+
+<code>
+vim /etc/default/puppetserver
+
+JAVA_ARGS="-Xms512m -Xmx512m -Djruby.logger.class=com.puppetlabs.jruby_utils.jruby.Slf4jLogger"
+
+</code>
+
+Set up the certificate authority:
+
+<code>
+/opt/puppetlabs/bin/puppetserver ca setup
+</code>
+
+<code>
+systemctl start puppetserver
+
+
+systemctl enable puppetserver
+</code>
+
+===== Installing Pupept Agent On CentOS =====
+
+Add the Puppet repository:
+
+<code>
+rpm -Uvh https://yum.puppetlabs.com/puppet6/puppet6-release-el-7.noarch.rpm
+
+yum update
+
+yum install puppet-agent
+
+systemctl start puppet
+
+systemctl enable puppet
+
+</code>
+
+
+Accept the agent:
+
+<code>
+
+puppetserver ca sign --certname <hostname>
+
+
+</code>
+
+===== Puppet Master | puppet.conf - Config Options =====
+
+**[main]**
+
+  * user and group: These set the user and group that Puppet works as
+  * environment_timeout: This disables the caching of environment information (so Puppet checks the environment at every Puppet run)
+  * module_groups: Do not change this setting; this contains modules PE needs from the Puppet Forge to function
+
+Puppet also lists the following settings as important to know for the [main] section of our master configuration:
+
+  * dns_alt_names: This lets us set alternate names for our Puppet master; also where we set up our DNS information if we're using a round robin DNS setup
+  * environmentpath: Set the location of directory environments; defaults to /etc/puppetlabs/code/environments
+  * basemodulepath: Sets the location of Puppet modules available to all environments; defaults to /etc/puppetlabs/code/modules
+
+**[master]**
+
+  * node_terminus: Sets which node terminus is used during a Puppet run; defaults to plain in Open Source Puppet and classifier in Puppet Enterprise
+  * storeconfigs and storeconfigs_backend: Lets Puppet store data about any nodes and sets which backend the data is sent to
+  * reports: Sets the report handler; this is different from report
+  * always_retry_plugins: When set to false, resource types and features will not attempt to reload any failure
+  * disable_i18n: Turns off all translations of Puppet and module log messages
+
+  * catalog_terminus: Sets an optional static compiler, using up CPU cycles in exchange for better catalog compilation performance
+  * ca: Determines whether the master acts as the Certificate Authority; there can only be one CA
+  * ca_ttl: Sets how long our certificates remain valid; defaults to five years (5y)
+  * autosign: Sets the location of our autosigning rules
+
+===== Puppet Nodes | puppet.conf - Config Options =====
+
+
+  * environment: Sets the default environment for the server; defaults to production
+  * sourceaddress: Used in multi-home environments to define which address should be used for Puppet
+  * runinterval: How often the agent requests a catalog from the master; defaults to 30m
+  * waitforcert: Boolean defining whether or not the agent will attempt to reconnect should there be no response from the master
+
+We also have some options specifically related to the agent's behavior during a Puppet run:
+
+  * noop: Sets the Puppet agent so it only checks if changes to the server will be made, but does not make the changes
+  * priority: Sets the "nice"ness of the service to prevent taking resources away from other tasks
+  * report: Sets whether the agent returns a report to the master
+  * tags: Lets us define which Puppet classes are run by defining which tags it should have
+  * trace: Print stack trace during a Puppet run
+  * profile: Enables experimental performance profiling
+  * graph: Creates a .dot graph file
+  * show_diff: Saves a diff of any files that change during the run
+  * usecacheonfailure: Determines what the agent does should a Puppet run fail; if set to true, the agent falls back to the last successful catalog
+  * ignoreschedules: Ignores the use of the schedule parameter within Puppet code
+  * prerun_command: Runs a command before the Puppet run
+  * postrun_command: Runs a command after the Puppet run
+
+</code>
+
+
+===== Installing Puppet Dev Kit =====
+
+Install the Puppet Dev Kit:
+
+<code> apt-get install pdk </code>
