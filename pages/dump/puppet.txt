@@ -2,7 +2,7 @@
 
 Starting with installing Puppet, we'll then install and configure Puppet Open Source. Next, we'll create an Apache module where we'll learn how to use resource types, add static files, create templates, use OS-specific parameters, and store data in Hiera.
 
-===== Installing Debian =====
+===== Installing Puppet Server on Debian =====
 
 <code>
 wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
