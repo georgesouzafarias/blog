@@ -13,29 +13,29 @@ Senha: ********
 
 Para os clientes que possuem a versão 6.2 do TSM, será necessário primeiramente remove-lo.
 
-<source>
+<code>
 rpm -e TIVsm-BA-6.2.2-0.i586
 rpm -e TIVsm-API
-</source>
+</code>
 
 === Instalação do Client ===
 
 Após descompactar o pacote, fazer a instalação nesse sequência.
 
-<source>
+<code>
 rpm -U gskcrypt64*.rpm gskssl64*.rpm
 rpm -i TIVsm-API64.x86_64.rpm
 rpm -i TIVsm-APIcit.x86_64.rpm
 rpm -i TIVsm-BA.x86_64.rpm
 rpm -i TIVsm-BAcit.x86_64.rpm
 rpm -i TIVsm-BAhdw.x86_64.rpm
-</source>
+</code>
 
 === Configuração do Client ===
 
 Arquivo: /opt/tivoli/tsm/client/ba/bin/dsm.sys
 
-<source>
+<code>
 SErvername  tsmserver
    COMMMethod         TCPip
    TCPPort            1500
@@ -52,7 +52,7 @@ SchedLogRetention       3 S
 
 include.backup  "/backups/*"                                                    <MC_NAME>
 
-</source>
+</code>
 
 == Gerenciamento do Spectrum ==
 
@@ -61,23 +61,23 @@ include.backup  "/backups/*"                                                    
 
 
 Adicionar a Library SC ao TSM
-<source>
+<code>
 define library NEO_SC libtype=scsi
 define path tsmserver NEO_SC srct=server destt=library device=lb4.1.0.2 online=yes
-</source>
+</code>
 
 Adicionar o Drive1 ao TSM
-<source>
+<code>
 define drive NEO_SC DRIVE-1
 define path tsmserver DRIVE-1 srctype=server desttype=drive library=NEO_SC device=mt4.0.0.2 online=yes autod=y
-</source>
+</code>
 
 
 Adicionar o Drive2 ao TSM
-<source>
+<code>
 define drive NEO_SC DRIVE-2
 define path tsmserver DRIVE-2 srctype=server desttype=drive library=NEO_SC device=mt5.0.0.2 online=yes autod=y
-</source>
+</code>
 
 Coletando o PATH através de programa do TSM
 
@@ -87,7 +87,7 @@ C:\Program Files\Tivoli\TSM\server\tsmdiag\tsmdlst.exe   após a execução bast
 
 
 Coletando o PATH via Registro do Windows
-<source>
+<code>
 Abra o registro do Windows: REGEDIT e vá até: HKEY_LOCAL_MACHINE\HARDWARE\DEVICEMAP\SCSI
 
 E localize:
@@ -99,159 +99,159 @@ E localize:
 mtTarget Id.LUN .Bus .Port
 lbTarget Id.LUN .Bus .Port
 
-</source>
+</code>
 
 === Configuração do DevClass ===
 
 Criar um DEVCLASS para a Library
 
-<source>
+<code>
 define devclass DC_LTO_SC devtype=lto library=NEO_SC format=drive
-</source>
+</code>
 
 Criar um DEVCLASS para a Storage Pool de Disco.
-<source>
+<code>
 DEFine DEVclass DC_DISK_BACKUP1 devtype=file maxcapacity=100G directory="k:\"
-</source>
+</code>
 
 Criar um DEVCLASS para a Storage Pool de Cópia de Disco.
-<source>
+<code>
 DEFine DEVclass DC_DISK_BACKUP_COPIA devtype=file maxcapacity=100G directory="L:\"
-</source>
+</code>
 
 === Configuração do Storage Pool ===
 
 Criar o Storage Pool para a Library
-<source>
+<code>
 define stgpool SP_BACKUP_FITA DC_LTO_SC pooltype=primary description="Library de Backup" maxscratch=100000000
-</source>
+</code>
 
 Criar o Storage Pool para a Library Cópia
-<source>
+<code>
 define stgpool SP_BACKUP_FITA_COPIA DC_LTO_SD pooltype=copy description="Library de Backup Copia" maxscratch=100000000
-</source>
+</code>
 
 Associar Storage Pool de cópia para um Storage Pool 
-<source>
+<code>
 update stgpool sp_backup_disk1 copystgpools=sp_backup_fita_copia
-</source>
+</code>
 
 === Consulta SQL - Volumes da Library ===
-<source>
+<code>
 SELECT volume_name,status FROM libvolumes WHERE LIBRARY_NAME='NEO_SC' order by status
-</source>
+</code>
 
 === Adicionando Fitas Nunca usadas no TSM  ===
 
 Criação de Label para uma fita que nunca foi usada colocadas no Bulk.
 
 Library Principal:
-<source>
+<code>
 label libvolume neo_sc search=bulk labelsource=barcode checkin=scratch
-</source>
+</code>
 
 Library Cópia:
-<source>
+<code>
 label libvolume neo_sd search=bulk labelsource=barcode checkin=scratch
-</source>
+</code>
 
 === Inserindo uma Fita Já Usada ===
 
 Inserindo uma Fita Já Usada
 
-<source>
+<code>
 checkin libv neo_sc search=bulk status=Scr checklabel=barcode
 
 ou 
 
 checkin libv neo_sc search=bulk status=Priv checklabel=barcode
-</source>
+</code>
 
 === Update Status Volume ===
 Definindo Volume para Scratch ou Private
-<source>
+<code>
 update libvol <library> <volume> status=scratch
 update libvol <library> <volume> status=private
-</source>
+</code>
 
 Exemplo Scratch:
-<source>
+<code>
 update libvol neo_sc N08045L6 status=scratch
-</source>
+</code>
 
 Exemplo Private:
-<source>
+<code>
 update libvol neo_sc N08045L6 status=private
-</source>
+</code>
 
 === Adicionar Fita no Storage Pool ===
 Inserir fita no Storage Pool
-<source>
+<code>
 define volume <storage_pool> <volume>
-</source>
+</code>
 
 Exemplo:
-<source>
+<code>
 define volume sp_backup_fita M08045L6
-</source>
+</code>
 
 === Adicionando Fita De Limpeza   ===
 
 Fita De Limpeza
 
-<source>
+<code>
 checkin libvolume neo_sc search=bulk status=cleaner cleanings=200
-</source>
+</code>
 
 === Criação de Node e Usuário ===
 
 Criação de Node e Usuário
-<source>
+<code>
 register admin <ADMIN_NAME> <ADMIN_SENHA>
 register node <NODE_NOME> <NODE_SENHA> domain=<Politica> userid=<ADMIN_NAME>
-</source>
+</code>
 
 Exemplo:
-<source>
+<code>
 register admin MENTORH MENTORH
 register node MENTORH MENTORH domain=PD_PADRAO userid=MENTORH
-</source>
+</code>
 
-<source>
+<code>
 grant authority abnatal classes=node node=PJE8-SJT-BD-B authority=owner
-</source>
+</code>
 
 === Remoção de Fitas ===
 Checkout de Fitas Full
 
 Library Principal:
-<source>
+<code>
 checkout libvolume neo_sc vollist=<volume1,volume2> checklabel=no remove=bulk
-</source>
+</code>
 
 Library Cópia:
-<source>
+<code>
 checkout libvolume neo_sd vollist=<volume1,volume2> checklabel=no remove=bulk
-</source>
+</code>
 
 === Backup do Banco do Spectrum ===
 
 
 Setar o DevClass que será usado.
 
-<source>
+<code>
 set dbrecovery DC_LTO_SC
-</source>
+</code>
 
 Execução Manual do Bakcup.
 
-<source>
+<code>
 backup db type=full devclass=DC_LTO_SC WAIT=YES
-</source>
+</code>
 
 Script de Backup.
 
-<source>
+<code>
 
 SERIAL
 backup db type=full devclass=DC_LTO_SC WAIT=YES
@@ -259,7 +259,7 @@ IF (rc_ok) del volhistory TODATE=today-3 type=dbbackup
 IF (rc_ok) backup devconfig filenames=F:\tsminst1\DAT\devconf.dat
 IF (rc_ok) backup volhistory filenames=F:\tsminst1\DAT\volhist.dat
 
-</source>
+</code>
 
 === Gerenciador Web ===
 [https://10.8.14.7:11090/oc/ Link]
