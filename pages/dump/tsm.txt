@@ -1,0 +1,317 @@
+= Spectrum Protect =
+
+== Introdução ==
+https://10.8.14.7:11090/oc/
+
+Usuário: "admin"
+
+Senha: ********
+
+== Instalação ==
+
+=== Remover Versão < 6.2 ===
+
+Para os clientes que possuem a versão 6.2 do TSM, será necessário primeiramente remove-lo.
+
+<source>
+rpm -e TIVsm-BA-6.2.2-0.i586
+rpm -e TIVsm-API
+</source>
+
+=== Instalação do Client ===
+
+Após descompactar o pacote, fazer a instalação nesse sequência.
+
+<source>
+rpm -U gskcrypt64*.rpm gskssl64*.rpm
+rpm -i TIVsm-API64.x86_64.rpm
+rpm -i TIVsm-APIcit.x86_64.rpm
+rpm -i TIVsm-BA.x86_64.rpm
+rpm -i TIVsm-BAcit.x86_64.rpm
+rpm -i TIVsm-BAhdw.x86_64.rpm
+</source>
+
+=== Configuração do Client ===
+
+Arquivo: /opt/tivoli/tsm/client/ba/bin/dsm.sys
+
+<source>
+SErvername  tsmserver
+   COMMMethod         TCPip
+   TCPPort            1500
+   TCPServeraddress   10.8.14.7
+   passwordaccess     generate
+   nodename           <node_name>
+   schedmode prompted
+   include *  <MC_NAME>
+
+ErrorLogName            /var/log/tsm/dsmerror.log
+ErrorLogRetention       3 S
+SchedLogName            /var/log/tsm/dsmsched.log
+SchedLogRetention       3 S
+
+include.backup  "/backups/*"                                                    <MC_NAME>
+
+</source>
+
+== Gerenciamento do Spectrum ==
+
+=== Configuração da Library e Drive ===
+
+
+
+Adicionar a Library SC ao TSM
+<source>
+define library NEO_SC libtype=scsi
+define path tsmserver NEO_SC srct=server destt=library device=lb4.1.0.2 online=yes
+</source>
+
+Adicionar o Drive1 ao TSM
+<source>
+define drive NEO_SC DRIVE-1
+define path tsmserver DRIVE-1 srctype=server desttype=drive library=NEO_SC device=mt4.0.0.2 online=yes autod=y
+</source>
+
+
+Adicionar o Drive2 ao TSM
+<source>
+define drive NEO_SC DRIVE-2
+define path tsmserver DRIVE-2 srctype=server desttype=drive library=NEO_SC device=mt5.0.0.2 online=yes autod=y
+</source>
+
+Coletando o PATH através de programa do TSM
+
+Utilize o seguinte programa localizado dentro do servidor do TSM:
+
+C:\Program Files\Tivoli\TSM\server\tsmdiag\tsmdlst.exe   após a execução basta utilizar as definições de path  mostradas acima.
+
+
+Coletando o PATH via Registro do Windows
+<source>
+Abra o registro do Windows: REGEDIT e vá até: HKEY_LOCAL_MACHINE\HARDWARE\DEVICEMAP\SCSI
+
+E localize:
+- Port,
+- Bus,
+- Target Id,
+- LUN
+
+mtTarget Id.LUN .Bus .Port
+lbTarget Id.LUN .Bus .Port
+
+</source>
+
+=== Configuração do DevClass ===
+
+Criar um DEVCLASS para a Library
+
+<source>
+define devclass DC_LTO_SC devtype=lto library=NEO_SC format=drive
+</source>
+
+Criar um DEVCLASS para a Storage Pool de Disco.
+<source>
+DEFine DEVclass DC_DISK_BACKUP1 devtype=file maxcapacity=100G directory="k:\"
+</source>
+
+Criar um DEVCLASS para a Storage Pool de Cópia de Disco.
+<source>
+DEFine DEVclass DC_DISK_BACKUP_COPIA devtype=file maxcapacity=100G directory="L:\"
+</source>
+
+=== Configuração do Storage Pool ===
+
+Criar o Storage Pool para a Library
+<source>
+define stgpool SP_BACKUP_FITA DC_LTO_SC pooltype=primary description="Library de Backup" maxscratch=100000000
+</source>
+
+Criar o Storage Pool para a Library Cópia
+<source>
+define stgpool SP_BACKUP_FITA_COPIA DC_LTO_SD pooltype=copy description="Library de Backup Copia" maxscratch=100000000
+</source>
+
+Associar Storage Pool de cópia para um Storage Pool 
+<source>
+update stgpool sp_backup_disk1 copystgpools=sp_backup_fita_copia
+</source>
+
+=== Consulta SQL - Volumes da Library ===
+<source>
+SELECT volume_name,status FROM libvolumes WHERE LIBRARY_NAME='NEO_SC' order by status
+</source>
+
+=== Adicionando Fitas Nunca usadas no TSM  ===
+
+Criação de Label para uma fita que nunca foi usada colocadas no Bulk.
+
+Library Principal:
+<source>
+label libvolume neo_sc search=bulk labelsource=barcode checkin=scratch
+</source>
+
+Library Cópia:
+<source>
+label libvolume neo_sd search=bulk labelsource=barcode checkin=scratch
+</source>
+
+=== Inserindo uma Fita Já Usada ===
+
+Inserindo uma Fita Já Usada
+
+<source>
+checkin libv neo_sc search=bulk status=Scr checklabel=barcode
+
+ou 
+
+checkin libv neo_sc search=bulk status=Priv checklabel=barcode
+</source>
+
+=== Update Status Volume ===
+Definindo Volume para Scratch ou Private
+<source>
+update libvol <library> <volume> status=scratch
+update libvol <library> <volume> status=private
+</source>
+
+Exemplo Scratch:
+<source>
+update libvol neo_sc N08045L6 status=scratch
+</source>
+
+Exemplo Private:
+<source>
+update libvol neo_sc N08045L6 status=private
+</source>
+
+=== Adicionar Fita no Storage Pool ===
+Inserir fita no Storage Pool
+<source>
+define volume <storage_pool> <volume>
+</source>
+
+Exemplo:
+<source>
+define volume sp_backup_fita M08045L6
+</source>
+
+=== Adicionando Fita De Limpeza   ===
+
+Fita De Limpeza
+
+<source>
+checkin libvolume neo_sc search=bulk status=cleaner cleanings=200
+</source>
+
+=== Criação de Node e Usuário ===
+
+Criação de Node e Usuário
+<source>
+register admin <ADMIN_NAME> <ADMIN_SENHA>
+register node <NODE_NOME> <NODE_SENHA> domain=<Politica> userid=<ADMIN_NAME>
+</source>
+
+Exemplo:
+<source>
+register admin MENTORH MENTORH
+register node MENTORH MENTORH domain=PD_PADRAO userid=MENTORH
+</source>
+
+<source>
+grant authority abnatal classes=node node=PJE8-SJT-BD-B authority=owner
+</source>
+
+=== Remoção de Fitas ===
+Checkout de Fitas Full
+
+Library Principal:
+<source>
+checkout libvolume neo_sc vollist=<volume1,volume2> checklabel=no remove=bulk
+</source>
+
+Library Cópia:
+<source>
+checkout libvolume neo_sd vollist=<volume1,volume2> checklabel=no remove=bulk
+</source>
+
+=== Backup do Banco do Spectrum ===
+
+
+Setar o DevClass que será usado.
+
+<source>
+set dbrecovery DC_LTO_SC
+</source>
+
+Execução Manual do Bakcup.
+
+<source>
+backup db type=full devclass=DC_LTO_SC WAIT=YES
+</source>
+
+Script de Backup.
+
+<source>
+
+SERIAL
+backup db type=full devclass=DC_LTO_SC WAIT=YES
+IF (rc_ok) del volhistory TODATE=today-3 type=dbbackup
+IF (rc_ok) backup devconfig filenames=F:\tsminst1\DAT\devconf.dat
+IF (rc_ok) backup volhistory filenames=F:\tsminst1\DAT\volhist.dat
+
+</source>
+
+=== Gerenciador Web ===
+[https://10.8.14.7:11090/oc/ Link]
+
+== Controles Fitas ==
+
+=== Quantitativos de Fitas ===
+
+'''Data do Levantamento: 06/11/2017'''
+
+Library: '''NEO_SC'''<br />
+Storage Pool Vinculado: '''sp_backup_fita'''<br />
+Total de Volumes existentes: '''54 Volumes'''<br />
+Total de Volumes já etiquetados mas não usados: '''19 Volumes'''<br />
+
+
+Library: '''NEO_SD'''<br />
+Storage Pool Vinculado: '''sp_backup_fita_copia'''<br />
+Total de Volumes existentes: '''39 Volumes'''<br />
+Total de Volumes já etiquetados mas não usados: '''0 Volumes'''<br />
+
+Total de Fitas Livres e sem etiqueta: '''30 fitas'''.
+
+== Troubleshoot ==
+
+=== Erros Drives - Dxi === 
+
+This problem will be resolved in Tivoli Storage Manager server and storage agent versions 6.1.5.300, 6.2.6.0 and 6.3.4.1 with APAR IC92965. When you upgrade to these fixing levels and the conditions are met, any backup attempts that detect this situation fail, therefore preventing any data loss. You will still have to set the CHECKTAPEPOS option value to TSMONLY or OFF if you use a Quantum Scalar® i6000 library.
+
+ 
+Portanto execute o comando:
+
+setopt checktapepos tsmonly
+
+
+KEY= 05 = Illegal request
+ASC=26, ASCQ= 00 = Invalid field in parameter list 
+
+Verifique com o comando:
+
+q opt CheckTapePos
+
+Se estiver como YES esta correto, caso retorno NO altere com o comando:
+
+setopt CheckTapePos  YES
+
+
+=== Erros Unidades do Storage === 
+
+Devido a diversos problemas com o Storage-SD, o TSM vem ficando indisponível devido por falha na montagem dos discos/LUN.
+
+Se ao acessar o servidor via RDP nenhum dos discos a seguir for exibido: Verificar a conexão com o Storage e reiniciar o servidor.
+
+
+[[Arquivo:Tsm_discos.png|alt=Lista de Discos TSM|centro|commoldura]]
