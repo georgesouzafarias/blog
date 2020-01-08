@@ -1,0 +1,70 @@
+====== Install the AWS CLI ======
+
+===== Install the AWS CLI on macOS =====
+
+==== Prerequisites: ====
+
+  * Python 2 version 2.7+ or Python 3 version 3.4+
+
+==== Install the AWS CLI Using the Bundled Installer ====
+
+To install the AWS CLI using the bundled installer
+
+Here are the steps described below:
+
+<code>
+curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+unzip awscli-bundle.zip
+sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+</code>
+
+===== Install the AWS CLI on Linux =====
+
+==== Prerequisites: ====
+
+  * Python 2 version 2.7+ or Python 3 version 3.4+
+  * pip
+
+==== Install pip ====
+
+If you don't already have pip installed, you can install:
+
+<code>
+$ curl -O https://bootstrap.pypa.io/get-pip.py
+</code>
+
+Run the script with Python to download and install the latest version of pip and other required support packages.
+
+<code>
+$ python3 get-pip.py --user
+</code>
+
+//Ensure the folder that contains pip is part of your PATH variable.//
+
+<code>
+$ pip3 --version
+</code>
+
+==== Install the AWS CLI with pip ====
+
+Use pip to install the AWS CLI.
+
+<code>
+$ pip3 install awscli --upgrade --user
+</code>
+
+When you use the --user switch, pip installs the AWS CLI to ~/.local/bin.
+
+Verify that the AWS CLI installed correctly.
+
+<code>
+$ aws --version
+aws-cli/1.16.273 Python/3.7.3 Linux/4.14.133-113.105.amzn2.x86_64 botocore/1.13.0
+</code>
+
+====== Reference ======
+
+Aws Docs:
+
+[[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html]]
+
