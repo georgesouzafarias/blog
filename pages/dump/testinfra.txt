@@ -1,0 +1,20 @@
+Getting started with Testinfra
+Testinfra can be easily installed using the Python package manager (pip) and a Python virtual environment.
+
+$ python3 -m venv venv
+$ source venv/bin/activate
+(venv) $ pip install testinfra
+Testinfra is also available in the package repositories of Fedora and CentOS using the EPEL repository. For example, on CentOS 7 you can install it with the following commands:
+
+$ yum install -y epel-release
+$ yum install -y python-testinfra
+A simple test script
+Writing tests in Testinfra is easy. Using the code editor of your choice, add the following to a file named test_simple.py:
+
+import testinfra
+
+def test_os_release(host):
+    assert host.file("/etc/os-release").contains("Fedora")
+
+def test_sshd_inactive(host):
+    assert host.service("sshd").is_running is False
