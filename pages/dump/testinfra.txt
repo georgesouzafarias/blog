@@ -1,16 +1,22 @@
 Getting started with Testinfra
 Testinfra can be easily installed using the Python package manager (pip) and a Python virtual environment.
 
+<code>
 $ python3 -m venv venv
 $ source venv/bin/activate
 (venv) $ pip install testinfra
 Testinfra is also available in the package repositories of Fedora and CentOS using the EPEL repository. For example, on CentOS 7 you can install it with the following commands:
+<code>
 
+<code>
 $ yum install -y epel-release
 $ yum install -y python-testinfra
+</code>
+
 A simple test script
 Writing tests in Testinfra is easy. Using the code editor of your choice, add the following to a file named test_simple.py:
 
+<code>
 import testinfra
 
 def test_os_release(host):
@@ -18,3 +24,35 @@ def test_os_release(host):
 
 def test_sshd_inactive(host):
     assert host.service("sshd").is_running is False
+</code>    
+
+
+<code>
+import pytest
+import subprocess
+import testinfra
+import time
+
+@pytest.fixture(scope='session')
+def host(request):
+    # build local ./Dockerfile
+    subprocess.check_call(['docker', 'build', '-t', 'myimage', '.'])
+    # run a container
+    docker_id = subprocess.check_output(
+        ['docker', 'run', '-d', '--env-file', 'env.producao',  'myimage']).decode().strip()
+    # return a testinfra connection to the container
+    yield testinfra.get_host("docker://" + docker_id)
+    # at the end of the test suite, destroy the container
+    subprocess.check_call(['docker', 'rm', '-f', docker_id])
+
+def test_jvm_is_running(host):    
+    assert host.run("ps aux |grep -v grep |grep jvm").succeeded
+
+def test_jboss_is_accessible(host):
+    time.sleep(60)
+    assert host.run("wget localhost:8080 --spide").succeeded
+
+def test_jboss_in_error(host):    
+    assert host.run("grep -r 'DEPLOYMENTS IN ERROR' /opt/jboss/server/default/log/server.log").succeeded
+    
+</code>
