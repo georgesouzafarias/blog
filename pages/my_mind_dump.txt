@@ -20,6 +20,8 @@
 
 [[dump:makefile|Criando Makefile]]
 
+[[dump:redis|Configurando Redis Server]]
+
 ===== Puppet =====
 
 [[dump:puppetinstall| Puppet Instação]]

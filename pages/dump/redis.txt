@@ -1,0 +1,130 @@
+====== Install Redis ======
+
+===== Install EPEL =====
+
+Add the EPEL repository:
+
+<code>
+yum install epel-release
+</code>
+
+Install Redis:
+
+<code>
+yum install redis
+</code>
+
+Finally, enable redis and start the service:
+
+<code>
+systemctl enable redis
+systemctl start redis
+<code>
+
+===== Test Redis Installation =====
+
+Verify that Redis is running:
+<code>
+redis-cli ping
+</code>
+
+If Redis is running, it will return:
+
+<code>
+PONG
+</code>
+
+===== Configure Redis =====
+
+==== Persistence Options ====
+
+Redis provides two options for disk persistence:
+
+Point-in-time snapshots of the dataset, made at specified intervals (RDB).(Default)
+
+Append-only logs of all the write operations performed by the server (AOF). 
+
+=== Enable AOF ===
+
+# Make sure that the following values are set for the appendonly and appendfsync settings in redis.conf:
+
+edit /etc/redis.conf:
+
+<code>
+appendonly yes
+appendfsync everysec
+</code>
+
+Restart Redis:
+<code>
+systemctl restart redis
+</code>
+
+==== Basic System Tuning ====
+
+To improve Redis performance, set the Linux kernel overcommit memory setting to 1:
+
+add vm.overcommit_memory = 1 to /etc/sysctl.conf:
+
+<code>
+sysctl vm.overcommit_memory=1
+</code>
+
+==== Additional Swap ====
+
+Depending upon your usage, you may find it necessary to add extra swap disk space. The Redis documentation recommends the size of your swap disk match the amount of memory available to your system.
+
+===== Userfull Commands =====
+
+==== Get All Keys In Redis ====
+
+<code>
+redis-cli --scan --pattern '*'
+</code>
+
+<code>
+redis-cli KEYS '*'
+</code>
+
+===== Use Password Authentication ======
+
+For an added layer of security, use password authentication to secure the connection between your master and slave Linodes.
+
+# On your master Linode, uncomment the requirepass line in your Redis configuration and replace master_password with a secure password:
+
+<code>
+requirepass <master_password>
+</code>
+
+# So, restart redis:
+
+<code> 
+systemctl restart redis
+</code>
+
+# On your slave Linode, add the master password to your Redis configuration under masterpass, and then create a unique password for the slave Linode with requirepass:
+
+<code> 
+masterpass  <master_password>
+requirepass <slave_password>
+</code>
+
+Replace master_password with the password you configured on your master, and replace slave_password with the password to use for your slave Linode.
+
+# Save your changes, and restart Redis on your slave Linode:
+
+<code>
+systemctl restart redis
+</code>
+
+# Connect to redis-cli on your master Linode, and use AUTH to authenticate with your master password:
+
+<code>
+redis-cli
+127.0.0.1:6379> AUTH master_password
+Once you’ve authenticated, you can view details about your Redis configuration by running INFO. This provides a lot of information, so you can specifically request the “Replication” section in your command:
+
+127.0.0.1:6379> INFO replication
+Output should be similar to the following
+
+</code>
