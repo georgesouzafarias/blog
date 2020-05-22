@@ -19,7 +19,7 @@ Finally, enable redis and start the service:
 <code>
 systemctl enable redis
 systemctl start redis
-<code>
+</code>
 
 ===== Test Redis Installation =====
 
@@ -46,9 +46,9 @@ Append-only logs of all the write operations performed by the server (AOF).
 
 === Enable AOF ===
 
-# Make sure that the following values are set for the appendonly and appendfsync settings in redis.conf:
+Make sure that the following values are set for the appendonly and appendfsync settings in redis.conf:
 
-edit /etc/redis.conf:
+Edit /etc/redis.conf:
 
 <code>
 appendonly yes
@@ -56,6 +56,7 @@ appendfsync everysec
 </code>
 
 Restart Redis:
+
 <code>
 systemctl restart redis
 </code>
@@ -90,19 +91,19 @@ redis-cli KEYS '*'
 
 For an added layer of security, use password authentication to secure the connection between your master and slave Linodes.
 
-# On your master Linode, uncomment the requirepass line in your Redis configuration and replace master_password with a secure password:
+- On your master Linode, uncomment the requirepass line in your Redis configuration and replace master_password with a secure password:
 
 <code>
 requirepass <master_password>
 </code>
 
-# So, restart redis:
+- So, restart redis:
 
 <code> 
 systemctl restart redis
 </code>
 
-# On your slave Linode, add the master password to your Redis configuration under masterpass, and then create a unique password for the slave Linode with requirepass:
+- On your slave Linode, add the master password to your Redis configuration under masterpass, and then create a unique password for the slave Linode with requirepass:
 
 <code> 
 masterpass  <master_password>
@@ -111,13 +112,13 @@ requirepass <slave_password>
 
 Replace master_password with the password you configured on your master, and replace slave_password with the password to use for your slave Linode.
 
-# Save your changes, and restart Redis on your slave Linode:
+- Save your changes, and restart Redis on your slave Linode:
 
 <code>
 systemctl restart redis
 </code>
 
-# Connect to redis-cli on your master Linode, and use AUTH to authenticate with your master password:
+- Connect to redis-cli on your master Linode, and use AUTH to authenticate with your master password:
 
 <code>
 redis-cli
@@ -126,5 +127,4 @@ Once you’ve authenticated, you can view details about your Redis configuration
 
 127.0.0.1:6379> INFO replication
 Output should be similar to the following
-
 </code>
